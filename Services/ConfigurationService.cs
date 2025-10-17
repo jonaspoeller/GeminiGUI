@@ -24,8 +24,21 @@ namespace GeminiGUI.Services
 
         public async Task<string?> GetApiKeyAsync()
         {
-            // Hardcoded API key
-            return "AIzaSyCS_U3ENM3suuOGHc6D4zJT-HAP_RzhC14";
+            try
+            {
+                if (!File.Exists(_configPath))
+                {
+                    return null;
+                }
+
+                var encryptedData = await File.ReadAllBytesAsync(_configPath);
+                var decryptedData = ProtectedData.Unprotect(encryptedData, _entropy, DataProtectionScope.CurrentUser);
+                return Encoding.UTF8.GetString(decryptedData);
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"Fehler beim Laden des API-Schlüssels: {ex.Message}", ex);
+            }
         }
 
         public async Task SetApiKeyAsync(string apiKey)
@@ -44,8 +57,15 @@ namespace GeminiGUI.Services
 
         public async Task<bool> HasApiKeyAsync()
         {
-            // Always return true since we have a hardcoded API key
-            return true;
+            try
+            {
+                var apiKey = await GetApiKeyAsync();
+                return !string.IsNullOrEmpty(apiKey);
+            }
+            catch
+            {
+                return false;
+            }
         }
     }
 }
