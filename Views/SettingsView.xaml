@@ -1,0 +1,135 @@
+<UserControl x:Class="GeminiGUI.Views.SettingsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Background="{StaticResource SurfaceBrush}">
+
+    <Grid Margin="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,24">
+            <TextBlock Text="Einstellungen" FontSize="24" FontWeight="Bold" 
+                       Foreground="{StaticResource TextPrimaryBrush}" VerticalAlignment="Center"/>
+            <Button Content="✕" FontSize="16" Width="32" Height="32" 
+                    Background="Transparent" BorderThickness="0" 
+                    Foreground="{StaticResource TextSecondaryBrush}"
+                    Click="CloseButton_Click" 
+                    Margin="16,0,0,0"/>
+        </StackPanel>
+
+        <!-- Content -->
+        <StackPanel Grid.Row="1">
+            <!-- API Key Section -->
+            <GroupBox Header="Google Gemini API" Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,16">
+                <StackPanel Margin="16">
+                    <TextBlock Text="API-Schlüssel:" 
+                               Foreground="{StaticResource TextPrimaryBrush}" 
+                               FontWeight="Medium" Margin="0,0,0,12"/>
+                    
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        
+                        <TextBox Grid.Column="0" 
+                                 Text="{Binding ApiKey, UpdateSourceTrigger=PropertyChanged}"
+                                 Style="{StaticResource ModernTextBox}"
+                                 Height="40"/>
+                        
+                        <Button Grid.Column="1" 
+                                Content="Speichern" 
+                                Style="{StaticResource ModernButton}"
+                                Command="{Binding SaveApiKeyCommand}"
+                                Margin="8,0,0,0" 
+                                Width="80" Height="40"/>
+                        
+                        <Button Grid.Column="2" 
+                                Content="👁" 
+                                Style="{StaticResource ModernButton}"
+                                Command="{Binding ToggleApiKeyVisibilityCommand}"
+                                Margin="4,0,0,0" 
+                                Width="40" Height="40"/>
+                    </Grid>
+
+                    <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
+                        <Button Content="Verbindung testen" 
+                                Style="{StaticResource ModernButton}"
+                                Command="{Binding TestConnectionCommand}"
+                                IsEnabled="{Binding IsTestingConnection, Converter={StaticResource InverseBooleanConverter}}"/>
+                        
+                        <Button Content="API-Schlüssel löschen" 
+                                Style="{StaticResource ModernButton}"
+                                Command="{Binding ClearApiKeyCommand}"
+                                Background="{StaticResource AccentBrush}"
+                                Margin="8,0,0,0"/>
+                    </StackPanel>
+
+                    <TextBlock Text="{Binding StatusMessage}" 
+                               Foreground="{StaticResource TextSecondaryBrush}" 
+                               FontSize="12"
+                               TextWrapping="Wrap" Margin="0,12,0,0"/>
+                </StackPanel>
+            </GroupBox>
+
+            <!-- Log Viewer Section -->
+            <GroupBox Header="Log-Dateien" Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,16">
+                <StackPanel Margin="16">
+                    <TextBlock Text="Detaillierte Fehlerprotokolle und Debug-Informationen" 
+                               Foreground="{StaticResource TextSecondaryBrush}" 
+                               FontSize="12" Margin="0,0,0,12"/>
+                    
+                    <StackPanel Orientation="Horizontal">
+                        <Button Content="Log-Viewer öffnen" 
+                                Style="{StaticResource ModernButton}"
+                                Command="{Binding OpenLogViewerCommand}"/>
+                        
+                        <Button Content="Logs aktualisieren" 
+                                Style="{StaticResource ModernButton}"
+                                Command="{Binding RefreshLogsCommand}"
+                                Margin="8,0,0,0"/>
+                    </StackPanel>
+                    
+                    <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                        <Button Content="Log-Datei im Explorer öffnen" 
+                                Style="{StaticResource ModernButton}"
+                                Command="{Binding OpenLogFileInExplorerCommand}"/>
+                    </StackPanel>
+                    
+                    <TextBlock Text="Log-Datei im Programmordner: gemini_gui_log_YYYY-MM-DD.txt" 
+                               Foreground="{StaticResource TextSecondaryBrush}" 
+                               FontSize="11" 
+                               Margin="0,8,0,0"/>
+                </StackPanel>
+            </GroupBox>
+
+            <!-- Info Section -->
+            <GroupBox Header="Information" Foreground="{StaticResource TextPrimaryBrush}">
+                <StackPanel Margin="16">
+                    <TextBlock Text="Gemini GUI v1.0" 
+                               Foreground="{StaticResource TextPrimaryBrush}"/>
+                    <TextBlock Text="Native Windows Client für Google Gemini 2.5 Pro" 
+                               Foreground="{StaticResource TextSecondaryBrush}" 
+                               FontSize="12" Margin="0,8,0,0"/>
+                    <TextBlock Text="Alle Chats werden lokal auf Ihrem Computer gespeichert." 
+                               Foreground="{StaticResource TextSecondaryBrush}" 
+                               FontSize="12" Margin="0,8,0,0"/>
+                </StackPanel>
+            </GroupBox>
+        </StackPanel>
+
+        <!-- Footer -->
+        <StackPanel Grid.Row="2" Orientation="Horizontal" 
+                    HorizontalAlignment="Right" Margin="0,24,0,0">
+            <Button Content="Schließen" 
+                    Style="{StaticResource ModernButton}"
+                    Click="CloseButton_Click" 
+                    Width="100"/>
+        </StackPanel>
+    </Grid>
+</UserControl>

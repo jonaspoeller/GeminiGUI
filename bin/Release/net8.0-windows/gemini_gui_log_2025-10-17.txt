@@ -1,0 +1,14 @@
+﻿[2025-10-17 17:17:14.679] [INFO] Gemini GUI starting up
+[2025-10-17 17:17:14.682] [INFO] DatabaseService initialized with connection: Data Source=gemini_chats.db
+[2025-10-17 17:17:14.691] [INFO] Initializing database connection
+[2025-10-17 17:17:14.941] [INFO] Database initialized successfully
+[2025-10-17 17:17:14.950] [INFO] GeminiService initialized
+[2025-10-17 17:17:14.951] [INFO] API key loaded from configuration
+[2025-10-17 17:17:14.951] [INFO] Gemini GUI startup completed successfully
+[2025-10-17 17:18:21.395] [INFO] Gemini GUI starting up
+[2025-10-17 17:18:21.398] [INFO] DatabaseService initialized with connection: Data Source=gemini_chats.db
+[2025-10-17 17:18:21.401] [INFO] Initializing database connection
+[2025-10-17 17:18:21.438] [INFO] Database initialized successfully
+[2025-10-17 17:18:21.453] [INFO] GeminiService initialized
+[2025-10-17 17:18:21.454] [INFO] API key loaded from configuration
+[2025-10-17 17:18:21.455] [INFO] Gemini GUI startup completed successfully
