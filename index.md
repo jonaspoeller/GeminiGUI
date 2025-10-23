@@ -2,6 +2,8 @@
 
 A modern WPF desktop application for interacting with Google's Gemini AI.
 
+**📁 [View Source Code on GitHub](https://github.com/jonaspoeller/GeminiGUI)**
+
 ## Features
 
 - Clean, modern UI
@@ -26,6 +28,10 @@ Download the latest release from the [Releases](https://github.com/jonaspoeller/
 3. Enter your Google AI Studio API key in Settings
 4. Start chatting!
 
+## Contributing
+
+Found a bug or want to contribute? Visit our [GitHub Repository](https://github.com/jonaspoeller/GeminiGUI) to report issues or submit pull requests.
+
 ## License
 
-MIT License - see [LICENSE](LICENSE) file for details.
+MIT License - see [LICENSE](https://github.com/jonaspoeller/GeminiGUI/blob/main/LICENSE) file for details.
