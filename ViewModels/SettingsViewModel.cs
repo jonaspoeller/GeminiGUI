@@ -115,6 +115,7 @@ namespace GeminiGUI.ViewModels
             try
             {
                 await _configService.SetApiKeyAsync(string.Empty);
+                _geminiService.SetApiKey(string.Empty); // API-Key auch aus GeminiService entfernen
                 ApiKey = string.Empty;
                 HasApiKey = false;
                 ConnectionStatus = "API-Schlüssel gelöscht";
@@ -203,7 +204,7 @@ namespace GeminiGUI.ViewModels
                 {
                     ApiKey = existingApiKey!;
                     IsApiKeySet = true;
-                    ConnectionStatus = "API-Schlüssel geladen (hardcoded)";
+                    ConnectionStatus = "API-Schlüssel geladen";
                 }
                 else
                 {

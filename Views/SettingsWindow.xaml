@@ -50,6 +50,12 @@
                                     Margin="8,0,0,0"/>
                         </Grid>
                         <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
+                            <Button Content="API-Key holen" 
+                                    Click="OpenApiKeyWebsite_Click"
+                                    Style="{StaticResource ModernButton}"
+                                    Padding="24,16"
+                                    Margin="0,0,8,0"
+                                    MinWidth="140"/>
                             <Button Content="Speichern" 
                                     Command="{Binding SaveApiKeyCommand}" 
                                     Style="{StaticResource ModernButton}"
@@ -102,7 +108,7 @@
                     <StackPanel Margin="16">
                         <TextBlock Text="Gemini GUI v1.0" 
                                    Foreground="{StaticResource TextPrimaryBrush}"/>
-                        <TextBlock Text="Native Windows Client für Google Gemini 2.5 Pro" 
+                        <TextBlock Text="Nativer Windows Client für Google Gemini" 
                                    Foreground="{StaticResource TextSecondaryBrush}" 
                                    FontSize="12" Margin="0,8,0,0"/>
                         <TextBlock Text="Alle Chats werden lokal auf Ihrem Computer gespeichert." 

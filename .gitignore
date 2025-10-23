@@ -1,0 +1,37 @@
+# Build outputs
+bin/
+obj/
+*.dll
+*.exe
+*.pdb
+*.cache
+*.log
+
+# Visual Studio
+.vs/
+*.user
+*.suo
+*.sln.docstates
+
+# Temporary files
+*.tmp
+*.temp
+*_wpftmp.*
+
+# Release files
+*.zip
+publish*/
+GeminiGUI-*-Release*/
+
+# Database
+*.db
+*.db-shm
+*.db-wal
+
+# Logs
+*.txt
+logs/
+
+# OS files
+.DS_Store
+Thumbs.db

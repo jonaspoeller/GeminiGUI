@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "njHtLVT3/BRaWHa4X8B+Xp28nimvEZK/+oaqJKeoLztOy0RNqWE++6hAEX/wuyi67asc6GFQOCBpNRWZqGxZWg==",
+  "dgSpecHash": "we190HPK5nnGgajaevTTm/Y3NOj2WH12YG1OME9WqIXuA5vuNA5/3e4qwPU9MJtRZgdkk6PeVXLB+V3WhtyhOg==",
   "success": true,
   "projectFilePath": "C:\\Users\\jonas.DESKTOP-V5SCO6C\\Desktop\\GeminiGUI\\GeminiGUI.csproj",
   "expectedPackageFiles": [
@@ -35,6 +35,7 @@
     "C:\\Users\\jonas.DESKTOP-V5SCO6C\\.nuget\\packages\\microsoft.extensions.options\\8.0.0\\microsoft.extensions.options.8.0.0.nupkg.sha512",
     "C:\\Users\\jonas.DESKTOP-V5SCO6C\\.nuget\\packages\\microsoft.extensions.options.configurationextensions\\8.0.0\\microsoft.extensions.options.configurationextensions.8.0.0.nupkg.sha512",
     "C:\\Users\\jonas.DESKTOP-V5SCO6C\\.nuget\\packages\\microsoft.extensions.primitives\\8.0.0\\microsoft.extensions.primitives.8.0.0.nupkg.sha512",
+    "C:\\Users\\jonas.DESKTOP-V5SCO6C\\.nuget\\packages\\microsoft.net.illink.tasks\\8.0.21\\microsoft.net.illink.tasks.8.0.21.nupkg.sha512",
     "C:\\Users\\jonas.DESKTOP-V5SCO6C\\.nuget\\packages\\newtonsoft.json\\13.0.3\\newtonsoft.json.13.0.3.nupkg.sha512",
     "C:\\Users\\jonas.DESKTOP-V5SCO6C\\.nuget\\packages\\sqlitepclraw.bundle_e_sqlite3\\2.1.6\\sqlitepclraw.bundle_e_sqlite3.2.1.6.nupkg.sha512",
     "C:\\Users\\jonas.DESKTOP-V5SCO6C\\.nuget\\packages\\sqlitepclraw.core\\2.1.6\\sqlitepclraw.core.2.1.6.nupkg.sha512",
@@ -43,7 +44,10 @@
     "C:\\Users\\jonas.DESKTOP-V5SCO6C\\.nuget\\packages\\system.diagnostics.diagnosticsource\\8.0.0\\system.diagnostics.diagnosticsource.8.0.0.nupkg.sha512",
     "C:\\Users\\jonas.DESKTOP-V5SCO6C\\.nuget\\packages\\system.diagnostics.eventlog\\8.0.0\\system.diagnostics.eventlog.8.0.0.nupkg.sha512",
     "C:\\Users\\jonas.DESKTOP-V5SCO6C\\.nuget\\packages\\system.memory\\4.5.3\\system.memory.4.5.3.nupkg.sha512",
-    "C:\\Users\\jonas.DESKTOP-V5SCO6C\\.nuget\\packages\\system.text.json\\8.0.5\\system.text.json.8.0.5.nupkg.sha512"
+    "C:\\Users\\jonas.DESKTOP-V5SCO6C\\.nuget\\packages\\system.text.json\\8.0.5\\system.text.json.8.0.5.nupkg.sha512",
+    "C:\\Users\\jonas.DESKTOP-V5SCO6C\\.nuget\\packages\\microsoft.netcore.app.runtime.win-x64\\8.0.21\\microsoft.netcore.app.runtime.win-x64.8.0.21.nupkg.sha512",
+    "C:\\Users\\jonas.DESKTOP-V5SCO6C\\.nuget\\packages\\microsoft.windowsdesktop.app.runtime.win-x64\\8.0.21\\microsoft.windowsdesktop.app.runtime.win-x64.8.0.21.nupkg.sha512",
+    "C:\\Users\\jonas.DESKTOP-V5SCO6C\\.nuget\\packages\\microsoft.aspnetcore.app.runtime.win-x64\\8.0.21\\microsoft.aspnetcore.app.runtime.win-x64.8.0.21.nupkg.sha512"
   ],
   "logs": []
 }

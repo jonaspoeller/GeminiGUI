@@ -24,8 +24,8 @@ namespace GeminiGUI.Services
 
         public async Task<string?> GetApiKeyAsync()
         {
-            // Hardcoded API key
-            return "AIzaSyCS_U3ENM3suuOGHc6D4zJT-HAP_RzhC14";
+            // No hardcoded API key - return null
+            return null;
         }
 
         public async Task SetApiKeyAsync(string apiKey)
@@ -44,8 +44,9 @@ namespace GeminiGUI.Services
 
         public async Task<bool> HasApiKeyAsync()
         {
-            // Always return true since we have a hardcoded API key
-            return true;
+            // Check if API key exists in configuration
+            var apiKey = await GetApiKeyAsync();
+            return !string.IsNullOrEmpty(apiKey);
         }
     }
 }

@@ -36,6 +36,22 @@ namespace GeminiGUI.ViewModels
         [ObservableProperty]
         private bool _isInputEnabled;
 
+        [ObservableProperty]
+        private string _apiKeyStatus = "Kein API-Schlüssel";
+
+        [ObservableProperty]
+        private bool _hasActiveChat;
+
+        [ObservableProperty]
+        private ObservableCollection<string> _availableModels = new()
+        {
+            "2.5 Pro",
+            "Flash Latest"
+        };
+
+        [ObservableProperty]
+        private string _selectedModel = "2.5 Pro";
+
         public MainWindowViewModel(IChatService chatService, IDatabaseService databaseService, IConfigurationService configService, SettingsViewModel settingsViewModel)
         {
             _chatService = chatService;
@@ -45,11 +61,26 @@ namespace GeminiGUI.ViewModels
             _isInputEnabled = false; // Standardmäßig deaktiviert
             _ = LoadChatsAsync(); // Fire and forget
             UpdateInputEnabled(); // Initial state
+            _ = UpdateApiKeyStatusAsync(); // Check API key status
         }
 
         private void UpdateInputEnabled()
         {
             IsInputEnabled = SelectedChat != null && (CurrentChatViewModel?.IsLoading != true);
+            HasActiveChat = SelectedChat != null;
+        }
+
+        private async Task UpdateApiKeyStatusAsync()
+        {
+            try
+            {
+                var hasApiKey = await _configService.HasApiKeyAsync();
+                ApiKeyStatus = hasApiKey ? "API-Schlüssel geladen" : "Kein API-Schlüssel";
+            }
+            catch
+            {
+                ApiKeyStatus = "Kein API-Schlüssel";
+            }
         }
 
         [RelayCommand]
@@ -62,6 +93,7 @@ namespace GeminiGUI.ViewModels
                 Chats.Insert(0, newChat);
                 SelectedChat = newChat;
                 UpdateInputEnabled();
+                HasActiveChat = true; // Explicitly set HasActiveChat to true
                 StatusMessage = "Neuer Chat erstellt";
             }
             catch (Exception ex)
@@ -108,6 +140,9 @@ namespace GeminiGUI.ViewModels
             }
             
             settingsWindow.ShowDialog();
+            
+            // Update API key status after settings window is closed
+            await UpdateApiKeyStatusAsync();
         }
 
         [RelayCommand]
@@ -132,6 +167,7 @@ namespace GeminiGUI.ViewModels
                 CurrentChatViewModel = null;
             }
             UpdateInputEnabled();
+            HasActiveChat = value != null; // Explicitly update HasActiveChat
         }
 
         private void OnLoadingStateChanged(object? sender, bool isLoading)
@@ -157,11 +193,13 @@ namespace GeminiGUI.ViewModels
                 }
                 
                 StatusMessage = $"{Chats.Count} Chats geladen";
+                UpdateInputEnabled(); // Update input state after loading chats
             }
             catch (Exception ex)
             {
                 StatusMessage = $"Fehler beim Laden: {ex.Message}";
             }
         }
+
     }
 }

@@ -63,12 +63,10 @@ C:\Users\jonas.DESKTOP-V5SCO6C\Desktop\GeminiGUI\obj\Release\net8.0-windows\Styl
 C:\Users\jonas.DESKTOP-V5SCO6C\Desktop\GeminiGUI\obj\Release\net8.0-windows\Styles\Controls.baml
 C:\Users\jonas.DESKTOP-V5SCO6C\Desktop\GeminiGUI\obj\Release\net8.0-windows\Views\ChatMessageControl.baml
 C:\Users\jonas.DESKTOP-V5SCO6C\Desktop\GeminiGUI\obj\Release\net8.0-windows\Views\LogViewerWindow.baml
-C:\Users\jonas.DESKTOP-V5SCO6C\Desktop\GeminiGUI\obj\Release\net8.0-windows\Views\SettingsView.baml
 C:\Users\jonas.DESKTOP-V5SCO6C\Desktop\GeminiGUI\obj\Release\net8.0-windows\Views\SettingsWindow.baml
 C:\Users\jonas.DESKTOP-V5SCO6C\Desktop\GeminiGUI\obj\Release\net8.0-windows\Views\ChatMessageControl.g.cs
 C:\Users\jonas.DESKTOP-V5SCO6C\Desktop\GeminiGUI\obj\Release\net8.0-windows\Views\LogViewerWindow.g.cs
 C:\Users\jonas.DESKTOP-V5SCO6C\Desktop\GeminiGUI\obj\Release\net8.0-windows\Views\MainWindow.g.cs
-C:\Users\jonas.DESKTOP-V5SCO6C\Desktop\GeminiGUI\obj\Release\net8.0-windows\Views\SettingsView.g.cs
 C:\Users\jonas.DESKTOP-V5SCO6C\Desktop\GeminiGUI\obj\Release\net8.0-windows\Views\SettingsWindow.g.cs
 C:\Users\jonas.DESKTOP-V5SCO6C\Desktop\GeminiGUI\obj\Release\net8.0-windows\App.g.cs
 C:\Users\jonas.DESKTOP-V5SCO6C\Desktop\GeminiGUI\obj\Release\net8.0-windows\GeneratedInternalTypeHelper.g.cs
@@ -81,6 +79,7 @@ C:\Users\jonas.DESKTOP-V5SCO6C\Desktop\GeminiGUI\obj\Release\net8.0-windows\Gemi
 C:\Users\jonas.DESKTOP-V5SCO6C\Desktop\GeminiGUI\obj\Release\net8.0-windows\GeminiGUI.AssemblyInfoInputs.cache
 C:\Users\jonas.DESKTOP-V5SCO6C\Desktop\GeminiGUI\obj\Release\net8.0-windows\GeminiGUI.AssemblyInfo.cs
 C:\Users\jonas.DESKTOP-V5SCO6C\Desktop\GeminiGUI\obj\Release\net8.0-windows\GeminiGUI.csproj.CoreCompileInputs.cache
+C:\Users\jonas.DESKTOP-V5SCO6C\Desktop\GeminiGUI\obj\Release\net8.0-windows\GeminiGUI.sourcelink.json
 C:\Users\jonas.DESKTOP-V5SCO6C\Desktop\GeminiGUI\obj\Release\net8.0-windows\GeminiGUI.csproj.CopyComplete
 C:\Users\jonas.DESKTOP-V5SCO6C\Desktop\GeminiGUI\obj\Release\net8.0-windows\GeminiGUI.dll
 C:\Users\jonas.DESKTOP-V5SCO6C\Desktop\GeminiGUI\obj\Release\net8.0-windows\refint\GeminiGUI.dll

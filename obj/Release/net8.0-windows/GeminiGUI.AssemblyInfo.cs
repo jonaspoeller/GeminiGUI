@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("GeminiGUI")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Release")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+f9e48e613b23724c5624a5d4944f880e960d79b8")]
 [assembly: System.Reflection.AssemblyProductAttribute("GeminiGUI")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Gemini GUI")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

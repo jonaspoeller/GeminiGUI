@@ -1,5 +1,6 @@
 using System.Windows;
 using System.Windows.Controls;
+using System.Diagnostics;
 
 namespace GeminiGUI.Views
 {
@@ -97,6 +98,27 @@ namespace GeminiGUI.Views
         private void CloseButton_Click(object sender, RoutedEventArgs e)
         {
             Close();
+        }
+
+        private void OpenApiKeyWebsite_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                // Open the Google AI Studio API Keys page in the default browser
+                Process.Start(new ProcessStartInfo
+                {
+                    FileName = "https://aistudio.google.com/api-keys",
+                    UseShellExecute = true
+                });
+            }
+            catch (System.Exception ex)
+            {
+                // Show error message if opening browser fails
+                MessageBox.Show($"Fehler beim Öffnen der Website: {ex.Message}", 
+                              "Fehler", 
+                              MessageBoxButton.OK, 
+                              MessageBoxImage.Error);
+            }
         }
     }
 }

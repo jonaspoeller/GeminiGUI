@@ -100,13 +100,6 @@ namespace GeminiGUI.Views
             StartTitleEditing(sender as System.Windows.Controls.TextBox);
         }
 
-        private void EditTitleButton_Click(object sender, System.Windows.RoutedEventArgs e)
-        {
-            // Find the TextBox in the visual tree
-            var textBox = FindTextBoxInVisualTree();
-            StartTitleEditing(textBox);
-        }
-
         private System.Windows.Controls.TextBox? FindTextBoxInVisualTree()
         {
             return FindTextBoxInVisualTree(this);
@@ -133,6 +126,12 @@ namespace GeminiGUI.Views
         {
             if (textBox != null)
             {
+                // Notify ViewModel
+                if (DataContext is ViewModels.MainWindowViewModel viewModel)
+                {
+                    // No longer needed - button removed
+                }
+
                 // Store original color
                 _originalForeground = textBox.Foreground;
                 
@@ -174,6 +173,12 @@ namespace GeminiGUI.Views
 
         private void ExitTitleEditing(System.Windows.Controls.TextBox textBox)
         {
+            // Notify ViewModel
+            if (DataContext is ViewModels.MainWindowViewModel viewModel)
+            {
+                // No longer needed - button removed
+            }
+
             textBox.IsReadOnly = true;
             textBox.Cursor = System.Windows.Input.Cursors.Arrow;
             // Reset to original color

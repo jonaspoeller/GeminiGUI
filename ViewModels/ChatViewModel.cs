@@ -10,7 +10,7 @@ using System.Linq;
 
 namespace GeminiGUI.ViewModels
 {
-    public partial class ChatViewModel : ObservableObject
+    public partial class ChatViewModel : ObservableObject, IDisposable
     {
         private readonly IChatService _chatService;
         private readonly IDatabaseService _databaseService;
@@ -44,6 +44,8 @@ namespace GeminiGUI.ViewModels
 
         private DispatcherTimer _loadingAnimationTimer;
         private int _loadingDotsCount = 0;
+        private ChatMessage? _currentProcessingMessage;
+        private bool _disposed = false;
 
         public event EventHandler<bool>? LoadingStateChanged;
 
@@ -66,23 +68,14 @@ namespace GeminiGUI.ViewModels
 
         private void LoadingAnimationTimer_Tick(object sender, EventArgs e)
         {
+            if (_disposed || _currentProcessingMessage == null) return;
+            
             _loadingDotsCount = (_loadingDotsCount + 1) % 4; // 0, 1, 2, 3 für 0, 1, 2, 3 Punkte
             var dots = new string('.', _loadingDotsCount);
             
-            // Finde die letzte "Wird verarbeitet..." Nachricht und aktualisiere sie
-            for (int i = Messages.Count - 1; i >= 0; i--)
-            {
-                if (Messages[i] is ChatMessage message && message.Role == "model" && message.Content.StartsWith("Wird verarbeitet"))
-                {
-                    Messages[i] = new ChatMessage
-                    {
-                        Role = "model",
-                        Content = $"Wird verarbeitet{dots}",
-                        Timestamp = message.Timestamp
-                    };
-                    break;
-                }
-            }
+            // Aktualisiere die bestehende Nachricht statt ein neues Objekt zu erstellen
+            _currentProcessingMessage.Content = $"Wird verarbeitet{dots}";
+            OnPropertyChanged(nameof(Messages));
         }
 
         [RelayCommand]
@@ -120,13 +113,13 @@ namespace GeminiGUI.ViewModels
             ScrollToBottom();
 
             // 4. "Wird verarbeitet..." Nachricht erstellen
-            var processingMessage = new ChatMessage
+            _currentProcessingMessage = new ChatMessage
             {
                 Role = "model",
                 Content = "Wird verarbeitet",
                 Timestamp = DateTime.UtcNow
             };
-            Messages.Add(processingMessage);
+            Messages.Add(_currentProcessingMessage);
 
             // 5. Nochmal nach unten scrollen
             ScrollToBottom();
@@ -135,7 +128,6 @@ namespace GeminiGUI.ViewModels
             _loadingAnimationTimer.Start();
 
             var fullResponse = "";
-            var processingIndex = Messages.IndexOf(processingMessage);
 
             try
             {
@@ -144,22 +136,30 @@ namespace GeminiGUI.ViewModels
                 {
                     fullResponse += chunk;
                     
-                    // Streaming-Nachricht live aktualisieren
-                    if (processingIndex >= 0)
+                    // Streaming-Nachricht live aktualisieren (mit Throttling)
+                    if (_currentProcessingMessage != null)
                     {
-                        Messages[processingIndex] = new ChatMessage
+                        var now = DateTime.UtcNow;
+                        if ((now - _lastUIUpdate).TotalMilliseconds >= UIUpdateThrottleMs)
                         {
-                            Role = "model",
-                            Content = fullResponse,
-                            Timestamp = DateTime.UtcNow
-                        };
-                        
-                        // Während des Streamings nach unten scrollen
-                        ScrollToBottom();
+                            _currentProcessingMessage.Content = fullResponse;
+                            OnPropertyChanged(nameof(Messages));
+                            _lastUIUpdate = now;
+                            
+                            // Weniger häufiges Scrollen während Streaming
+                            ScrollToBottom();
+                        }
                     }
                 }
 
-                // 6. Beide Nachrichten in DB speichern
+                // 6. Finale UI-Aktualisierung sicherstellen
+                if (_currentProcessingMessage != null)
+                {
+                    _currentProcessingMessage.Content = fullResponse;
+                    OnPropertyChanged(nameof(Messages));
+                }
+
+                // 7. Beide Nachrichten in DB speichern
                 await _databaseService.AddMessageAsync(_chat.Id, "user", message);
                 await _databaseService.AddMessageAsync(_chat.Id, "model", fullResponse);
                 await _databaseService.UpdateChatStatsAsync(_chat.Id);
@@ -167,21 +167,17 @@ namespace GeminiGUI.ViewModels
             catch (Exception ex)
             {
                 // 7. Bei Fehlern: Streaming-Nachricht durch Fehlermeldung ersetzen
-                if (processingIndex >= 0)
+                if (_currentProcessingMessage != null)
                 {
-                    var errorMessage = new ChatMessage
-                    {
-                        Role = "model",
-                        Content = $"Fehler: {ex.Message}",
-                        Timestamp = DateTime.UtcNow
-                    };
-                    Messages[processingIndex] = errorMessage;
+                    _currentProcessingMessage.Content = $"Fehler: {ex.Message}";
+                    OnPropertyChanged(nameof(Messages));
                 }
             }
             finally
             {
                 // Animation stoppen
                 _loadingAnimationTimer.Stop();
+                _currentProcessingMessage = null;
                 IsLoading = false;
             }
         }
@@ -260,21 +256,37 @@ namespace GeminiGUI.ViewModels
             }
         }
 
+        private System.Windows.Controls.ScrollViewer? _cachedScrollViewer;
+        private DateTime _lastScrollTime = DateTime.MinValue;
+        private const int ScrollThrottleMs = 100; // Weniger häufiges Scrollen während Streaming
+        private DateTime _lastUIUpdate = DateTime.MinValue;
+        private const int UIUpdateThrottleMs = 30; // UI-Updates throttlen für bessere Performance
+
         private void ScrollToBottom()
         {
-            Task.Delay(100).ContinueWith(_ =>
+            var now = DateTime.UtcNow;
+            if ((now - _lastScrollTime).TotalMilliseconds < ScrollThrottleMs)
+                return; // Skip if called too frequently
+                
+            _lastScrollTime = now;
+
+            // Use cached scroll viewer if available
+            if (_cachedScrollViewer != null)
             {
-                System.Windows.Application.Current.Dispatcher.Invoke(() =>
+                _cachedScrollViewer.ScrollToEnd();
+                return;
+            }
+
+            // Find scroll viewer only once and cache it
+            System.Windows.Application.Current.Dispatcher.BeginInvoke(new Action(() =>
+            {
+                var mainWindow = System.Windows.Application.Current.MainWindow as Views.MainWindow;
+                if (mainWindow != null)
                 {
-                    // Finde den ScrollViewer im Visual Tree
-                    var mainWindow = System.Windows.Application.Current.MainWindow as Views.MainWindow;
-                    if (mainWindow != null)
-                    {
-                        var scrollViewer = FindScrollViewer(mainWindow);
-                        scrollViewer?.ScrollToEnd();
-                    }
-                });
-            });
+                    _cachedScrollViewer = FindScrollViewer(mainWindow);
+                    _cachedScrollViewer?.ScrollToEnd();
+                }
+            }), System.Windows.Threading.DispatcherPriority.Background);
         }
 
         private System.Windows.Controls.ScrollViewer? FindScrollViewer(System.Windows.DependencyObject parent)
@@ -292,5 +304,18 @@ namespace GeminiGUI.ViewModels
             return null;
         }
 
+        public void Dispose()
+        {
+            if (!_disposed)
+            {
+                _loadingAnimationTimer?.Stop();
+                if (_loadingAnimationTimer != null)
+                {
+                    _loadingAnimationTimer.Tick -= LoadingAnimationTimer_Tick;
+                    _loadingAnimationTimer = null;
+                }
+                _disposed = true;
+            }
+        }
     }
 }
