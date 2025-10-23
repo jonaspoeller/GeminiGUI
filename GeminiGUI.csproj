@@ -6,7 +6,7 @@
     <UseWPF>true</UseWPF>
     <ApplicationIcon>icon.ico</ApplicationIcon>
     <AssemblyTitle>Gemini GUI</AssemblyTitle>
-    <AssemblyDescription>Native Windows Client für Google Gemini 2.5 Pro</AssemblyDescription>
+    <AssemblyDescription>Native Windows Client für Google Gemini Pro & Flash</AssemblyDescription>
     <AssemblyCompany>GeminiGUI</AssemblyCompany>
     <AssemblyProduct>Gemini GUI</AssemblyProduct>
     <AssemblyVersion>1.0.0.0</AssemblyVersion>
@@ -24,12 +24,6 @@
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="8.0.0" />
     <PackageReference Include="Microsoft.Extensions.Http" Version="8.0.0" />
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.2.2" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Update="appsettings.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
   </ItemGroup>
 
 </Project>

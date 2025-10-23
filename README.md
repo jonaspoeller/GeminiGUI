@@ -1,6 +1,6 @@
 # Gemini GUI
 
-A native Windows desktop application for Google Gemini 2.5 Pro with local chat storage and modern user interface.
+A native Windows desktop application for Google Gemini Pro & Flash with local chat storage and modern user interface.
 
 ## Features
 
@@ -34,5 +34,5 @@ A native Windows desktop application for Google Gemini 2.5 Pro with local chat s
 
 - WPF (.NET 8)
 - SQLite for local database
-- Google Gemini 2.5 Pro API
+- Google Gemini Pro & Flash API
 - CommunityToolkit.Mvvm for MVVM pattern
