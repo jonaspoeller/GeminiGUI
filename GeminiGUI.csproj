@@ -6,11 +6,11 @@
     <UseWPF>true</UseWPF>
     <ApplicationIcon>icon.ico</ApplicationIcon>
     <AssemblyTitle>Gemini GUI</AssemblyTitle>
-    <AssemblyDescription>Native Windows Client für Google Gemini Pro & Flash</AssemblyDescription>
+    <AssemblyDescription>Native Windows Client für Google Gemini Pro &amp; Flash</AssemblyDescription>
     <AssemblyCompany>GeminiGUI</AssemblyCompany>
     <AssemblyProduct>Gemini GUI</AssemblyProduct>
-    <AssemblyVersion>1.0.0.0</AssemblyVersion>
-    <FileVersion>1.0.0.0</FileVersion>
+    <AssemblyVersion>0.1.0.0</AssemblyVersion>
+    <FileVersion>0.1.0.0</FileVersion>
     <GenerateExecutable>true</GenerateExecutable>
   </PropertyGroup>
 
