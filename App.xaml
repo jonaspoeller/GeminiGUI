@@ -14,10 +14,6 @@
             <converters:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
             <converters:InverseBooleanConverter x:Key="InverseBooleanConverter"/>
             <converters:InverseBooleanToVisibilityConverter x:Key="InverseBooleanToVisibilityConverter"/>
-            <converters:BooleanToVisibilityTextConverter x:Key="BooleanToVisibilityTextConverter"/>
-            <converters:RoleToDisplayNameConverter x:Key="RoleToDisplayNameConverter"/>
-            <converters:MarkdownToTextConverter x:Key="MarkdownToTextConverter"/>
-            <converters:MultiBooleanToBooleanConverter x:Key="MultiBooleanToBooleanConverter"/>
         </ResourceDictionary>
     </Application.Resources>
 </Application>

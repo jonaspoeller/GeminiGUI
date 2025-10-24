@@ -1,6 +1,5 @@
 using GeminiGUI.ViewModels;
 using System;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -16,9 +15,6 @@ namespace GeminiGUI.Views
             InitializeComponent();
             ViewModel = viewModel;
             DataContext = ViewModel;
-            
-            // Event-Handler für automatisches Scrollen
-            ViewModel.PropertyChanged += ViewModel_PropertyChanged;
         }
 
         private void ChatItem_DoubleClick(object sender, System.Windows.Input.MouseButtonEventArgs e)
@@ -39,60 +35,6 @@ namespace GeminiGUI.Views
                 }
                 e.Handled = true;
             }
-        }
-
-        private void ViewModel_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
-        {
-            if (e.PropertyName == nameof(ViewModel.CurrentChatViewModel))
-            {
-                // Wenn sich der aktuelle Chat ändert, nach unten scrollen
-                if (ViewModel.CurrentChatViewModel != null)
-                {
-                    // Event-Handler für neue Nachrichten hinzufügen
-                    ViewModel.CurrentChatViewModel.Messages.CollectionChanged += Messages_CollectionChanged;
-                    
-                    // Nach unten scrollen
-                    Task.Delay(200).ContinueWith(_ =>
-                    {
-                        Dispatcher.Invoke(() =>
-                        {
-                            var scrollViewer = FindScrollViewer(this);
-                            scrollViewer?.ScrollToEnd();
-                        });
-                    });
-                }
-            }
-        }
-
-        private void Messages_CollectionChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
-        {
-            // Bei neuen Nachrichten nach unten scrollen
-            if (e.Action == System.Collections.Specialized.NotifyCollectionChangedAction.Add)
-            {
-                Task.Delay(100).ContinueWith(_ =>
-                {
-                    Dispatcher.Invoke(() =>
-                    {
-                        var scrollViewer = FindScrollViewer(this);
-                        scrollViewer?.ScrollToEnd();
-                    });
-                });
-            }
-        }
-
-        private ScrollViewer? FindScrollViewer(DependencyObject parent)
-        {
-            for (int i = 0; i < System.Windows.Media.VisualTreeHelper.GetChildrenCount(parent); i++)
-            {
-                var child = System.Windows.Media.VisualTreeHelper.GetChild(parent, i);
-                if (child is ScrollViewer scrollViewer && scrollViewer.Name == "MessagesScrollViewer")
-                {
-                    return scrollViewer;
-                }
-                var result = FindScrollViewer(child);
-                if (result != null) return result;
-            }
-            return null;
         }
 
         private void ChatTitleTextBox_MouseDoubleClick(object sender, System.Windows.Input.MouseButtonEventArgs e)
@@ -139,7 +81,7 @@ namespace GeminiGUI.Views
                 textBox.Cursor = System.Windows.Input.Cursors.IBeam;
                 // Keep original black color
                 textBox.Foreground = _originalForeground;
-                textBox.CaretBrush = System.Windows.Media.Brushes.Black; // Schwarzer Cursor
+                textBox.CaretBrush = System.Windows.Media.Brushes.Black; // Black cursor
                 textBox.Focus();
                 // Don't select all text - just position cursor at end
                 textBox.CaretIndex = textBox.Text.Length;
@@ -228,8 +170,8 @@ namespace GeminiGUI.Views
             {
                 // Show confirmation dialog
                 var result = System.Windows.MessageBox.Show(
-                    $"Möchten Sie den Chat '{viewModel.SelectedChat.Title}' wirklich löschen?",
-                    "Chat löschen",
+                    $"Do you really want to delete the chat '{viewModel.SelectedChat.Title}'?",
+                    "Delete Chat",
                     System.Windows.MessageBoxButton.YesNo,
                     System.Windows.MessageBoxImage.Question);
 

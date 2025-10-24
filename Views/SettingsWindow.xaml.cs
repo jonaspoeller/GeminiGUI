@@ -77,7 +77,7 @@ namespace GeminiGUI.Views
                     // Switching to visible - show TextBox, hide PasswordBox
                     ApiKeyTextBox.Visibility = System.Windows.Visibility.Visible;
                     ApiPasswordBox.Visibility = System.Windows.Visibility.Collapsed;
-                    ToggleVisibilityButton.Content = "Verbergen";
+                    ToggleVisibilityButton.Content = "Hide";
                     
                     // Copy from PasswordBox to TextBox
                     ApiKeyTextBox.Text = ApiPasswordBox.Password;
@@ -87,7 +87,7 @@ namespace GeminiGUI.Views
                     // Switching to hidden - show PasswordBox, hide TextBox
                     ApiKeyTextBox.Visibility = System.Windows.Visibility.Collapsed;
                     ApiPasswordBox.Visibility = System.Windows.Visibility.Visible;
-                    ToggleVisibilityButton.Content = "Anzeigen";
+                    ToggleVisibilityButton.Content = "Show";
                     
                     // Copy from TextBox to PasswordBox
                     ApiPasswordBox.Password = ApiKeyTextBox.Text;
@@ -114,8 +114,8 @@ namespace GeminiGUI.Views
             catch (System.Exception ex)
             {
                 // Show error message if opening browser fails
-                MessageBox.Show($"Fehler beim Öffnen der Website: {ex.Message}", 
-                              "Fehler", 
+                MessageBox.Show($"Error opening website: {ex.Message}", 
+                              "Error", 
                               MessageBoxButton.OK, 
                               MessageBoxImage.Error);
             }

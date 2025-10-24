@@ -15,6 +15,7 @@ namespace GeminiGUI.ViewModels
         private readonly IChatService _chatService;
         private readonly IDatabaseService _databaseService;
         private readonly Chat _chat;
+        private readonly ILoggerService _logger;
 
         [ObservableProperty]
         private ObservableCollection<object> _messages = new();
@@ -46,53 +47,55 @@ namespace GeminiGUI.ViewModels
         private int _loadingDotsCount = 0;
         private ChatMessage? _currentProcessingMessage;
         private bool _disposed = false;
+        private bool _isSending = false;
 
         public event EventHandler<bool>? LoadingStateChanged;
 
-        public ChatViewModel(IChatService chatService, IDatabaseService databaseService, Chat chat)
+        public ChatViewModel(IChatService chatService, IDatabaseService databaseService, Chat chat, ILoggerService logger)
         {
             _chatService = chatService;
             _databaseService = databaseService;
             _chat = chat;
+            _logger = logger;
             _chatTitle = chat.Title;
             
-            // Timer für animierte Punkte initialisieren
+            // Initialize timer for animated dots
             _loadingAnimationTimer = new DispatcherTimer
             {
                 Interval = TimeSpan.FromMilliseconds(500)
             };
             _loadingAnimationTimer.Tick += LoadingAnimationTimer_Tick;
             
-            LoadMessagesAsync();
+            // Load messages asynchronously without blocking the UI thread
+            _ = Task.Run(async () =>
+            {
+                await Task.Delay(1); // Allow constructor to complete
+                await LoadMessagesAsync();
+            });
         }
 
         private void LoadingAnimationTimer_Tick(object sender, EventArgs e)
         {
             if (_disposed || _currentProcessingMessage == null) return;
             
-            _loadingDotsCount = (_loadingDotsCount + 1) % 4; // 0, 1, 2, 3 für 0, 1, 2, 3 Punkte
+            _loadingDotsCount = (_loadingDotsCount + 1) % 4; // 0, 1, 2, 3 for 0, 1, 2, 3 dots
             var dots = new string('.', _loadingDotsCount);
             
-            // Aktualisiere die bestehende Nachricht statt ein neues Objekt zu erstellen
-            _currentProcessingMessage.Content = $"Wird verarbeitet{dots}";
-            OnPropertyChanged(nameof(Messages));
+            // Update the existing message instead of creating a new object
+            _currentProcessingMessage.Content = $"Processing{dots}";
         }
 
         [RelayCommand]
         private async Task SendMessageAsync()
         {
-            if (string.IsNullOrWhiteSpace(CurrentMessage) || IsLoading)
-                return;
-
-            // Schutz vor mehrfacher Ausführung
-            if (IsLoading)
+            if (string.IsNullOrWhiteSpace(CurrentMessage) || _isSending)
                 return;
 
             var message = CurrentMessage.Trim();
             CurrentMessage = string.Empty;
-            IsLoading = true;
+            _isSending = true;
 
-            // 1. Datums-Trenner prüfen und ggf. hinzufügen
+            // 1. Check and add date separator if needed
             var currentDate = DateTime.UtcNow.Date;
             var lastMessage = Messages.OfType<ChatMessage>().LastOrDefault();
             if (lastMessage == null || lastMessage.Timestamp.Date != currentDate)
@@ -100,7 +103,7 @@ namespace GeminiGUI.ViewModels
                 Messages.Add(new DateSeparatorMessage(DateTime.UtcNow));
             }
 
-            // 2. Benutzernachricht sofort anzeigen
+            // 2. Show user message immediately
             var userMessage = new ChatMessage
             {
                 Role = "user",
@@ -109,77 +112,90 @@ namespace GeminiGUI.ViewModels
             };
             Messages.Add(userMessage);
 
-            // 3. Sofort nach unten scrollen
-            ScrollToBottom();
-
-            // 4. "Wird verarbeitet..." Nachricht erstellen
+            // 4. Create "Processing..." message
             _currentProcessingMessage = new ChatMessage
             {
                 Role = "model",
-                Content = "Wird verarbeitet",
+                Content = "Processing...",
                 Timestamp = DateTime.UtcNow
             };
             Messages.Add(_currentProcessingMessage);
 
-            // 5. Nochmal nach unten scrollen
-            ScrollToBottom();
-
-            // 6. Animation starten
+            // 6. Start animation
             _loadingAnimationTimer.Start();
 
-            var fullResponse = "";
+            // Yield to allow UI to update before starting background processing
+            await Task.Yield();
 
-            try
+            // Run the entire processing logic in a background thread - fire and forget
+            _ = Task.Run(async () =>
             {
-                // 5. Streaming von Gemini
-                await foreach (var chunk in _chatService.SendMessageStreamAsync(_chat.Id, message))
+                var fullResponse = "";
+
+                try
                 {
-                    fullResponse += chunk;
-                    
-                    // Streaming-Nachricht live aktualisieren (mit Throttling)
-                    if (_currentProcessingMessage != null)
+                    // 5. Stream from Gemini
+                    await foreach (var chunk in _chatService.SendMessageStreamAsync(_chat.Id, message).ConfigureAwait(false))
                     {
-                        var now = DateTime.UtcNow;
-                        if ((now - _lastUIUpdate).TotalMilliseconds >= UIUpdateThrottleMs)
+                        // Service already returns accumulated text, so just use it directly
+                        fullResponse = chunk;
+                        
+                        // Update UI on UI thread - FAST now with async markdown rendering!
+                        System.Windows.Application.Current.Dispatcher.BeginInvoke(new Action(() =>
+                        {
+                            if (_currentProcessingMessage != null)
+                            {
+                                var now = DateTime.UtcNow;
+                                if ((now - _lastUIUpdate).TotalMilliseconds >= UIUpdateThrottleMs)
+                                {
+                                    _currentProcessingMessage.Content = fullResponse;
+                                    _lastUIUpdate = now;
+                                }
+                            }
+                        }), System.Windows.Threading.DispatcherPriority.Normal);
+                    }
+
+                    // Stop animation timer FIRST before final update
+                    _loadingAnimationTimer.Stop();
+
+                    // Final UI update - FAST with async markdown rendering!
+                    await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                    {
+                        if (_currentProcessingMessage != null)
                         {
                             _currentProcessingMessage.Content = fullResponse;
-                            OnPropertyChanged(nameof(Messages));
-                            _lastUIUpdate = now;
-                            
-                            // Weniger häufiges Scrollen während Streaming
-                            ScrollToBottom();
+                            _currentProcessingMessage = null;
                         }
-                    }
-                }
+                    }, System.Windows.Threading.DispatcherPriority.Normal);
 
-                // 6. Finale UI-Aktualisierung sicherstellen
-                if (_currentProcessingMessage != null)
-                {
-                    _currentProcessingMessage.Content = fullResponse;
-                    OnPropertyChanged(nameof(Messages));
+                    // 7. Save both messages to database
+                    await _databaseService.AddMessageAsync(_chat.Id, "user", message).ConfigureAwait(false);
+                    await _databaseService.AddMessageAsync(_chat.Id, "model", fullResponse).ConfigureAwait(false);
+                    await _databaseService.UpdateChatStatsAsync(_chat.Id).ConfigureAwait(false);
                 }
-
-                // 7. Beide Nachrichten in DB speichern
-                await _databaseService.AddMessageAsync(_chat.Id, "user", message);
-                await _databaseService.AddMessageAsync(_chat.Id, "model", fullResponse);
-                await _databaseService.UpdateChatStatsAsync(_chat.Id);
-            }
-            catch (Exception ex)
-            {
-                // 7. Bei Fehlern: Streaming-Nachricht durch Fehlermeldung ersetzen
-                if (_currentProcessingMessage != null)
+                catch (Exception ex)
                 {
-                    _currentProcessingMessage.Content = $"Fehler: {ex.Message}";
-                    OnPropertyChanged(nameof(Messages));
+                    _logger.LogError($"Error in SendMessageAsync: {ex.Message}", ex);
+                    // On errors: Replace streaming message with error message
+                    await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                    {
+                        if (_currentProcessingMessage != null)
+                        {
+                            _currentProcessingMessage.Content = $"Error: {ex.Message}";
+                        }
+                    }, System.Windows.Threading.DispatcherPriority.Normal);
                 }
-            }
-            finally
-            {
-                // Animation stoppen
-                _loadingAnimationTimer.Stop();
-                _currentProcessingMessage = null;
-                IsLoading = false;
-            }
+                finally
+                {
+                    // Cleanup on UI thread
+                    await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                    {
+                        _loadingAnimationTimer.Stop();
+                        _currentProcessingMessage = null;
+                        _isSending = false;
+                    }, System.Windows.Threading.DispatcherPriority.Normal);
+                }
+            });
         }
 
         [RelayCommand]
@@ -201,7 +217,9 @@ namespace GeminiGUI.ViewModels
             }
             catch (Exception ex)
             {
-                // Fehlerbehandlung
+                _logger.LogError($"Failed to save chat title: {ex.Message}", ex);
+                ChatTitle = _chat.Title; // Revert to original title
+                IsEditingTitle = false;
             }
         }
 
@@ -214,106 +232,79 @@ namespace GeminiGUI.ViewModels
 
         private async Task LoadMessagesAsync()
         {
+            IsLoading = true;
             try
             {
-                var messages = await _chatService.GetChatMessagesAsync(_chat.Id);
+                // Load messages on background thread
+                var messages = await _chatService.GetChatMessagesAsync(_chat.Id).ConfigureAwait(false);
                 
-                // Temporär Event-Handler entfernen um mehrfache Scroll-Aufrufe zu vermeiden
-                Messages.CollectionChanged -= OnMessagesCollectionChanged;
-                
-                Messages.Clear();
-                
-                DateTime? lastDate = null;
-                foreach (var message in messages)
+                // Update UI on UI thread using BeginInvoke (non-blocking)
+                System.Windows.Application.Current.Dispatcher.BeginInvoke(new Action(() =>
                 {
-                    // Datums-Trenner hinzufügen wenn sich das Datum ändert
-                    if (lastDate == null || message.Timestamp.Date != lastDate.Value.Date)
+                    // Temporarily remove event handler to avoid multiple scroll calls
+                    Messages.CollectionChanged -= OnMessagesCollectionChanged;
+                    
+                    Messages.Clear();
+                    
+                    DateTime? lastDate = null;
+                    foreach (var message in messages)
                     {
-                        Messages.Add(new DateSeparatorMessage(message.Timestamp));
-                        lastDate = message.Timestamp.Date;
+                        // Add date separator when date changes
+                        if (lastDate == null || message.Timestamp.Date != lastDate.Value.Date)
+                        {
+                            Messages.Add(new DateSeparatorMessage(message.Timestamp));
+                            lastDate = message.Timestamp.Date;
+                        }
+                        
+                        Messages.Add(message);
                     }
                     
-                    Messages.Add(message);
-                }
-                
-                // Event-Handler wieder hinzufügen
-                Messages.CollectionChanged += OnMessagesCollectionChanged;
+                    // Re-add event handler
+                    Messages.CollectionChanged += OnMessagesCollectionChanged;
+                    
+                    IsLoading = false;
+                }), System.Windows.Threading.DispatcherPriority.Background);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                // Fehlerbehandlung
+                // Error handling on UI thread
+                System.Windows.Application.Current.Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    IsLoading = false;
+                }), System.Windows.Threading.DispatcherPriority.Normal);
             }
         }
+
+        private DateTime _lastUIUpdate = DateTime.MinValue;
+        private const int UIUpdateThrottleMs = 10; // Faster UI updates (was 30ms)
 
         private void OnMessagesCollectionChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
         {
-            // Bei neuen Nachrichten immer scrollen
+            // Trigger PropertyChanged for UI updates when new messages are added
             if (e.Action == System.Collections.Specialized.NotifyCollectionChangedAction.Add)
             {
-                // Scrollen wird jetzt im MainWindow gehandhabt
-                // Hier nur ein Event auslösen
                 OnPropertyChanged(nameof(Messages));
             }
-        }
-
-        private System.Windows.Controls.ScrollViewer? _cachedScrollViewer;
-        private DateTime _lastScrollTime = DateTime.MinValue;
-        private const int ScrollThrottleMs = 100; // Weniger häufiges Scrollen während Streaming
-        private DateTime _lastUIUpdate = DateTime.MinValue;
-        private const int UIUpdateThrottleMs = 30; // UI-Updates throttlen für bessere Performance
-
-        private void ScrollToBottom()
-        {
-            var now = DateTime.UtcNow;
-            if ((now - _lastScrollTime).TotalMilliseconds < ScrollThrottleMs)
-                return; // Skip if called too frequently
-                
-            _lastScrollTime = now;
-
-            // Use cached scroll viewer if available
-            if (_cachedScrollViewer != null)
-            {
-                _cachedScrollViewer.ScrollToEnd();
-                return;
-            }
-
-            // Find scroll viewer only once and cache it
-            System.Windows.Application.Current.Dispatcher.BeginInvoke(new Action(() =>
-            {
-                var mainWindow = System.Windows.Application.Current.MainWindow as Views.MainWindow;
-                if (mainWindow != null)
-                {
-                    _cachedScrollViewer = FindScrollViewer(mainWindow);
-                    _cachedScrollViewer?.ScrollToEnd();
-                }
-            }), System.Windows.Threading.DispatcherPriority.Background);
-        }
-
-        private System.Windows.Controls.ScrollViewer? FindScrollViewer(System.Windows.DependencyObject parent)
-        {
-            for (int i = 0; i < System.Windows.Media.VisualTreeHelper.GetChildrenCount(parent); i++)
-            {
-                var child = System.Windows.Media.VisualTreeHelper.GetChild(parent, i);
-                if (child is System.Windows.Controls.ScrollViewer scrollViewer && scrollViewer.Name == "MessagesScrollViewer")
-                {
-                    return scrollViewer;
-                }
-                var result = FindScrollViewer(child);
-                if (result != null) return result;
-            }
-            return null;
         }
 
         public void Dispose()
         {
             if (!_disposed)
             {
+                // Stop and cleanup timer
                 _loadingAnimationTimer?.Stop();
                 if (_loadingAnimationTimer != null)
                 {
                     _loadingAnimationTimer.Tick -= LoadingAnimationTimer_Tick;
                     _loadingAnimationTimer = null;
                 }
+                
+                // Remove event handlers to prevent memory leaks
+                Messages.CollectionChanged -= OnMessagesCollectionChanged;
+                
+                // Clear references
+                _currentProcessingMessage = null;
+                
                 _disposed = true;
             }
         }

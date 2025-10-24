@@ -12,15 +12,15 @@ namespace GeminiGUI.Services
 {
     public class GeminiService : IGeminiService
     {
-        private readonly HttpClient _httpClient;
+        private readonly IHttpClientFactory _httpClientFactory;
         private readonly IConfiguration _configuration;
         private readonly ILoggerService _logger;
         private string? _apiKey;
         private readonly string _baseUrl;
 
-        public GeminiService(HttpClient httpClient, IConfiguration configuration, ILoggerService logger)
+        public GeminiService(IHttpClientFactory httpClientFactory, IConfiguration configuration, ILoggerService logger)
         {
-            _httpClient = httpClient;
+            _httpClientFactory = httpClientFactory;
             _configuration = configuration;
             _logger = logger;
             _baseUrl = _configuration["GeminiAPI:BaseUrl"] ?? "https://generativelanguage.googleapis.com/v1beta";
@@ -35,10 +35,32 @@ namespace GeminiGUI.Services
         {
             if (string.IsNullOrEmpty(_apiKey))
             {
-                _logger.LogError("API-Schlüssel nicht gesetzt");
-                throw new InvalidOperationException("API-Schlüssel nicht gesetzt");
+                _logger.LogError("API key not set");
+                throw new InvalidOperationException("API key not set");
             }
 
+            // Retry logic for transient failures
+            int maxRetries = 2;
+            int retryDelayMs = 1000;
+            
+            for (int attempt = 1; attempt <= maxRetries; attempt++)
+            {
+                try
+                {
+                    return await SendMessageInternalAsync(message, chatHistory).ConfigureAwait(false);
+                }
+                catch (HttpRequestException ex) when (attempt < maxRetries && ex.Message.Contains("Service unavailable"))
+                {
+                    await Task.Delay(retryDelayMs).ConfigureAwait(false);
+                }
+            }
+            
+            // This should never be reached, but needed for compiler
+            throw new HttpRequestException("All retry attempts failed");
+        }
+
+        private async Task<string> SendMessageInternalAsync(string message, List<ChatMessage> chatHistory)
+        {
 
             var request = new GeminiRequest
             {
@@ -50,7 +72,7 @@ namespace GeminiGUI.Services
                 request.Contents.Add(new Content
                 {
                     Role = "user",
-                    Parts = new List<Part> { new Part { Text = "Antworte bitte immer auf Deutsch, außer es wird explizit nach einer anderen Sprache gefragt." } }
+                    Parts = new List<Part> { new Part { Text = "Please always respond in English, unless explicitly asked for another language." } }
                 });
             }
 
@@ -88,12 +110,24 @@ namespace GeminiGUI.Services
 
             try
             {
-                var response = await _httpClient.PostAsync(url, content);
-                var responseContent = await response.Content.ReadAsStringAsync();
+                // Create HttpClient with timeout from factory
+                using var httpClient = _httpClientFactory.CreateClient("Gemini");
+                
+                // Create a request message to add custom headers
+                var requestMessage = new HttpRequestMessage(HttpMethod.Post, url);
+                requestMessage.Content = content;
+                
+                // Note: Gemini API requires API key as query parameter
+                // Moving it to header would break the API call
+                // Keeping it as is for functionality, but logging is secure
+                
+                var response = await httpClient.SendAsync(requestMessage).ConfigureAwait(false);
+                var responseContent = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
 
                 if (!response.IsSuccessStatusCode)
                 {
-                    _logger.LogError($"API-Fehler: {response.StatusCode} - {responseContent}");
+                    // Don't log full response content to avoid potential sensitive data exposure
+                    _logger.LogError($"API error: {response.StatusCode}");
                     var userFriendlyMessage = GetUserFriendlyErrorMessage(response.StatusCode, responseContent);
                     throw new HttpRequestException(userFriendlyMessage);
                 }
@@ -111,15 +145,15 @@ namespace GeminiGUI.Services
 
                 if (geminiResponse?.Error != null)
                 {
-                    _logger.LogError($"Gemini API Fehler: {geminiResponse.Error.Message}");
-                    throw new Exception($"Gemini API Fehler: {geminiResponse.Error.Message}");
+                    _logger.LogError($"Gemini API error: {geminiResponse.Error.Message}");
+                    throw new Exception($"Gemini API error: {geminiResponse.Error.Message}");
                 }
 
-                throw new Exception("Keine Antwort von Gemini erhalten");
+                throw new Exception("No response received from Gemini");
             }
             catch (Exception ex)
             {
-                _logger.LogError("Fehler beim Senden der Nachricht an Gemini", ex);
+                _logger.LogError("Error sending message to Gemini", ex);
                 throw;
             }
         }
@@ -128,26 +162,56 @@ namespace GeminiGUI.Services
         {
             if (string.IsNullOrEmpty(_apiKey))
             {
-                _logger.LogError("API-Schlüssel nicht gesetzt");
-                throw new InvalidOperationException("API-Schlüssel nicht gesetzt");
+                _logger.LogError("API key not set");
+                yield return "Error: API key not set. Please configure your API key in settings.";
+                yield break;
             }
 
-            var fullResponse = await SendMessageAsync(message, chatHistory);
+            string fullResponse = null;
+            string errorMessage = null;
             
-            var words = fullResponse.Split(' ');
-            var currentChunk = "";
-            
-            foreach (var word in words)
+            try
             {
-                currentChunk += word + " ";
-                yield return currentChunk;
-                currentChunk = "";
-                await Task.Delay(20);
+                fullResponse = await SendMessageAsync(message, chatHistory).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Error in SendMessageAsync: {ex.Message}", ex);
+                errorMessage = $"Error: {ex.Message}";
             }
             
-            if (!string.IsNullOrEmpty(currentChunk.Trim()))
+            if (!string.IsNullOrEmpty(errorMessage))
             {
-                yield return currentChunk;
+                yield return errorMessage;
+                yield break;
+            }
+            
+            if (string.IsNullOrEmpty(fullResponse))
+            {
+                _logger.LogError("Received empty response from Gemini API");
+                yield return "Error: Failed to get response from Gemini API";
+                yield break;
+            }
+            
+            var words = fullResponse.Split(' ');
+            var wordsPerChunk = 3; // Show 3 words at a time for faster display
+            var accumulatedText = "";
+            
+            for (int i = 0; i < words.Length; i += wordsPerChunk)
+            {
+                var currentChunk = "";
+                for (int j = 0; j < wordsPerChunk && i + j < words.Length; j++)
+                {
+                    currentChunk += words[i + j] + " ";
+                }
+                accumulatedText += currentChunk;
+                yield return accumulatedText;
+                await Task.Delay(5).ConfigureAwait(false); // Faster display (was 20ms)
+            }
+            
+            if (!string.IsNullOrEmpty(accumulatedText.Trim()))
+            {
+                yield return accumulatedText;
             }
         }
 
@@ -173,34 +237,34 @@ namespace GeminiGUI.Services
             switch (statusCode)
             {
                 case System.Net.HttpStatusCode.BadRequest:
-                    return "Ungültige Anfrage. Bitte überprüfe deine Eingabe.";
+                    return "Invalid request. Please check your input.";
                 
                 case System.Net.HttpStatusCode.Unauthorized:
-                    return "API-Schlüssel ungültig. Bitte überprüfe deine Einstellungen.";
+                    return "API key invalid. Please check your settings.";
                 
                 case System.Net.HttpStatusCode.Forbidden:
-                    return "Zugriff verweigert. API-Berechtigung fehlt.";
+                    return "Access denied. API permission missing.";
                 
                 case System.Net.HttpStatusCode.NotFound:
-                    return "API-Endpunkt nicht gefunden.";
+                    return "API endpoint not found.";
                 
                 case System.Net.HttpStatusCode.TooManyRequests:
-                    return "Tägliches Limit erreicht. Versuche es morgen wieder.";
+                    return "Daily limit reached. Please try again tomorrow.";
                 
                 case System.Net.HttpStatusCode.InternalServerError:
-                    return "Server-Fehler. Versuche es später nochmal.";
+                    return "Server error. Please try again later.";
                 
                 case System.Net.HttpStatusCode.BadGateway:
-                    return "Server-Antwort ungültig. Versuche es später nochmal.";
+                    return "Invalid server response. Please try again later.";
                 
                 case System.Net.HttpStatusCode.ServiceUnavailable:
-                    return "Service nicht verfügbar. Versuche es später nochmal.";
+                    return "Service unavailable. Please try again later.";
                 
                 case System.Net.HttpStatusCode.GatewayTimeout:
-                    return "Zeitüberschreitung. Versuche es später nochmal.";
+                    return "Request timeout. Please try again later.";
                 
                 default:
-                    return $"Verbindungsfehler. Versuche es später nochmal.";
+                    return $"Connection error. Please try again later.";
             }
         }
 

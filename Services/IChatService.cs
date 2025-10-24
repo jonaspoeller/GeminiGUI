@@ -11,7 +11,6 @@ namespace GeminiGUI.Services
         Task<Chat?> LoadChatAsync(int chatId);
         Task DeleteChatAsync(int chatId);
         Task<ChatMessage> SendMessageAsync(int chatId, string message);
-        Task<ChatMessage> SendMessageOnlyAsync(int chatId, string message);
         IAsyncEnumerable<string> SendMessageStreamAsync(int chatId, string message);
         Task<List<ChatMessage>> GetChatMessagesAsync(int chatId);
         Task UpdateChatTitleAsync(int chatId, string newTitle);

@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using GeminiGUI.Models;
-using System.Collections;
 
 namespace GeminiGUI.Services
 {
@@ -25,7 +24,7 @@ namespace GeminiGUI.Services
         public async Task<Chat> CreateNewChatAsync(string title)
         {
             if (string.IsNullOrWhiteSpace(title))
-                title = "Neuer Chat";
+                title = "New Chat";
 
             return await _databaseService.CreateChatAsync(title);
         }
@@ -60,30 +59,13 @@ namespace GeminiGUI.Services
             return assistantMessage;
         }
 
-        public async Task<ChatMessage> SendMessageOnlyAsync(int chatId, string message)
-        {
-            // Chat-Verlauf laden (ohne die neue Nachricht)
-            var chatHistory = await _databaseService.GetChatMessagesAsync(chatId);
-            
-            // An Gemini senden (mit Verlauf + neue Nachricht)
-            var response = await _geminiService.SendMessageAsync(message, chatHistory);
-            
-            // Nur die Antwort zurückgeben, ohne in DB zu speichern
-            return new ChatMessage
-            {
-                Role = "model",
-                Content = response,
-                Timestamp = DateTime.UtcNow
-            };
-        }
-
         public async IAsyncEnumerable<string> SendMessageStreamAsync(int chatId, string message)
         {
             // Chat-Verlauf laden (ohne die neue Nachricht)
-            var chatHistory = await _databaseService.GetChatMessagesAsync(chatId);
+            var chatHistory = await _databaseService.GetChatMessagesAsync(chatId).ConfigureAwait(false);
             
             // Streaming von Gemini
-            await foreach (var chunk in _geminiService.SendMessageStreamAsync(message, chatHistory))
+            await foreach (var chunk in _geminiService.SendMessageStreamAsync(message, chatHistory).ConfigureAwait(false))
             {
                 yield return chunk;
             }

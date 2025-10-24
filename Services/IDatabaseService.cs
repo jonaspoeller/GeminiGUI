@@ -7,6 +7,7 @@ namespace GeminiGUI.Services
     public interface IDatabaseService
     {
         Task InitializeAsync();
+        Task PrepareEncryptionAsync();
         Task CloseAsync();
         Task<List<Chat>> GetAllChatsAsync();
         Task<Chat?> GetChatByIdAsync(int id);

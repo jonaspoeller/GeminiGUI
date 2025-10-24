@@ -3,6 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:views="clr-namespace:GeminiGUI.Views"
         xmlns:converters="clr-namespace:GeminiGUI.Converters"
+        xmlns:behaviors="clr-namespace:GeminiGUI.Behaviors"
         Title="Gemini GUI" 
         Height="800" Width="1200"
         MinHeight="600" MinWidth="800"
@@ -47,8 +48,8 @@
                           VerticalAlignment="Center"/>
 
                 <StackPanel Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Right">
-                    <Button Content="Neuer Chat" Command="{Binding CreateNewChatCommand}" Style="{StaticResource ModernButton}" MinWidth="100" Padding="16,8" Margin="0,0,8,0"/>
-                    <Button Content="Einstellungen" Command="{Binding OpenSettingsCommand}" Style="{StaticResource ModernButton}" MinWidth="100" Padding="16,8"/>
+                    <Button Content="New Chat" Command="{Binding CreateNewChatCommand}" Style="{StaticResource ModernButton}" MinWidth="100" Padding="16,8" Margin="0,0,8,0"/>
+                    <Button Content="Settings" Command="{Binding OpenSettingsCommand}" Style="{StaticResource ModernButton}" MinWidth="100" Padding="16,8"/>
                 </StackPanel>
             </Grid>
         </Border>
@@ -81,35 +82,66 @@
                              Style="{StaticResource ModernListBox}">
                         <ListBox.ContextMenu>
                             <ContextMenu Style="{StaticResource ModernContextMenu}">
-                                <MenuItem Header="Bearbeiten" Click="EditChatMenuItem_Click" Style="{StaticResource ModernMenuItem}"/>
-                                <MenuItem Header="Löschen" Click="DeleteChatMenuItem_Click" Style="{StaticResource ModernMenuItem}"/>
+                                <MenuItem Header="Edit" Click="EditChatMenuItem_Click" Style="{StaticResource ModernMenuItem}"/>
+                                <MenuItem Header="Delete" Click="DeleteChatMenuItem_Click" Style="{StaticResource ModernMenuItem}"/>
                             </ContextMenu>
                         </ListBox.ContextMenu>
                         <ListBox.ItemTemplate>
                             <DataTemplate>
-                                <Border Background="{StaticResource SurfaceBrush}" 
-                                        BorderBrush="{StaticResource BorderBrush}" 
-                                        BorderThickness="1" 
-                                        CornerRadius="4" 
-                                        Padding="12,8" 
-                                        Margin="8,4">
-                                    <Grid>
-                                        <Grid.RowDefinitions>
-                                            <RowDefinition Height="Auto"/>
-                                            <RowDefinition Height="Auto"/>
-                                        </Grid.RowDefinitions>
-                                        <TextBlock Grid.Row="0" 
-                                                   Text="{Binding Title}" 
-                                                   FontWeight="Bold" 
-                                                   Foreground="{StaticResource TextPrimaryBrush}"
-                                                   TextTrimming="CharacterEllipsis"/>
-                                        <TextBlock Grid.Row="1" 
-                                                   Text="{Binding CreatedAt, StringFormat='{}{0:dd.MM.yyyy HH:mm}'}" 
-                                                   FontSize="12" 
-                                                   Foreground="{StaticResource TextSecondaryBrush}"
-                                                   Margin="0,4,0,0"/>
-                                    </Grid>
-                                </Border>
+                                <!-- Outer container with margin -->
+                                <Grid Margin="10,6">
+                                    <!-- Background border for shadow (when selected) -->
+                                    <Border x:Name="ShadowBorder"
+                                            Background="{StaticResource SurfaceBrush}"
+                                            BorderBrush="{StaticResource BorderBrush}"
+                                            BorderThickness="1"
+                                            CornerRadius="4"/>
+                                    
+                                    <!-- Foreground border for content (no effect) -->
+                                    <Border x:Name="ContentBorder"
+                                            Background="{StaticResource SurfaceBrush}" 
+                                            BorderBrush="{StaticResource BorderBrush}" 
+                                            BorderThickness="1" 
+                                            CornerRadius="4" 
+                                            Padding="12,8">
+                                        <Grid>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                            </Grid.RowDefinitions>
+                                            <TextBlock Grid.Row="0" 
+                                                       Text="{Binding Title}" 
+                                                       FontWeight="Bold" 
+                                                       Foreground="{StaticResource TextPrimaryBrush}"
+                                                       TextTrimming="CharacterEllipsis"/>
+                                            <TextBlock Grid.Row="1" 
+                                                       Text="{Binding CreatedAt, StringFormat='{}{0:dd.MM.yyyy HH:mm}'}" 
+                                                       FontSize="12" 
+                                                       Foreground="{StaticResource TextSecondaryBrush}"
+                                                       Margin="0,4,0,0"/>
+                                        </Grid>
+                                    </Border>
+                                </Grid>
+                                <DataTemplate.Triggers>
+                                    <DataTrigger Binding="{Binding IsSelected, RelativeSource={RelativeSource AncestorType=ListBoxItem}}" Value="True">
+                                        <!-- Apply shadow to background border -->
+                                        <Setter TargetName="ShadowBorder" Property="BorderBrush" Value="#FF64B5F6"/>
+                                        <Setter TargetName="ShadowBorder" Property="BorderThickness" Value="3"/>
+                                        <Setter TargetName="ShadowBorder" Property="Effect">
+                                            <Setter.Value>
+                                                <DropShadowEffect Color="#FF64B5F6" 
+                                                                Direction="270" 
+                                                                ShadowDepth="0" 
+                                                                BlurRadius="6" 
+                                                                Opacity="0.4"
+                                                                RenderingBias="Performance"/>
+                                            </Setter.Value>
+                                        </Setter>
+                                        <!-- Style foreground border (no effect!) -->
+                                        <Setter TargetName="ContentBorder" Property="BorderBrush" Value="#FF64B5F6"/>
+                                        <Setter TargetName="ContentBorder" Property="BorderThickness" Value="3"/>
+                                    </DataTrigger>
+                                </DataTemplate.Triggers>
                             </DataTemplate>
                         </ListBox.ItemTemplate>
                         <ListBox.ItemContainerStyle>
@@ -119,6 +151,20 @@
                                 <Setter Property="Margin" Value="0"/>
                                 <Setter Property="Background" Value="Transparent"/>
                                 <Setter Property="BorderThickness" Value="0"/>
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="ListBoxItem">
+                                            <Border x:Name="Border" Background="{TemplateBinding Background}">
+                                                <ContentPresenter/>
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsSelected" Value="True">
+                                                    <Setter TargetName="Border" Property="Background" Value="Transparent"/>
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
                             </Style>
                         </ListBox.ItemContainerStyle>
                     </ListBox>
@@ -141,85 +187,148 @@
                             </Grid.RowDefinitions>
 
                             <!-- Chat Header -->
-                            <Border Grid.Row="0" Background="{StaticResource SurfaceBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1" Padding="8,12">
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto"/>
-                                        <ColumnDefinition Width="*"/>
-                                    </Grid.ColumnDefinitions>
-
-                                    <!-- Icon -->
-                                    <Image Grid.Column="0"
-                                           Source="icon.ico"
-                                           Width="20"
-                                           Height="20"
-                                           VerticalAlignment="Center"
-                                           Margin="0,0,12,0"/>
-
-                                    <TextBox Grid.Column="1"
-                                             Text="{Binding ChatTitle, UpdateSourceTrigger=PropertyChanged}"
-                                             FontSize="16" 
-                                             FontWeight="Bold" 
-                                             Foreground="{StaticResource TextPrimaryBrush}"
-                                             Background="Transparent"
-                                             BorderThickness="0"
-                                             IsReadOnly="True"
-                                             Cursor="Arrow"
-                                             MouseDoubleClick="ChatTitleTextBox_MouseDoubleClick"
-                                             Name="ChatTitleTextBox"/>
-                                </Grid>
+                            <Border Grid.Row="0" Background="{StaticResource SurfaceBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1" Padding="24,12">
+                                <TextBox Text="{Binding ChatTitle, UpdateSourceTrigger=PropertyChanged}"
+                                         FontSize="16" 
+                                         FontWeight="Bold" 
+                                         Foreground="{StaticResource TextPrimaryBrush}"
+                                         Background="Transparent"
+                                         BorderThickness="0"
+                                         IsReadOnly="True"
+                                         Cursor="Arrow"
+                                         MouseDoubleClick="ChatTitleTextBox_MouseDoubleClick"
+                                         Name="ChatTitleTextBox"/>
                             </Border>
 
                             <!-- Messages -->
                             <ScrollViewer x:Name="MessagesScrollViewer" Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Background="{StaticResource ChatBackgroundBrush}" Style="{StaticResource ModernScrollViewer}">
                                 <Grid>
+                                    <!-- Loading Indicator -->
+                                    <StackPanel HorizontalAlignment="Center" 
+                                                VerticalAlignment="Center">
+                                        <StackPanel.Style>
+                                            <Style TargetType="StackPanel">
+                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                                <Style.Triggers>
+                                                    <MultiDataTrigger>
+                                                        <MultiDataTrigger.Conditions>
+                                                            <Condition Binding="{Binding DataContext.HasActiveChat, RelativeSource={RelativeSource AncestorType=Window}}" Value="True"/>
+                                                            <Condition Binding="{Binding DataContext.CurrentChatViewModel.IsLoading, RelativeSource={RelativeSource AncestorType=Window}}" Value="True"/>
+                                                        </MultiDataTrigger.Conditions>
+                                                        <Setter Property="Visibility" Value="Visible"/>
+                                                    </MultiDataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </StackPanel.Style>
+                                        <TextBlock Text="Loading messages..." 
+                                                   FontSize="16" 
+                                                   Foreground="#FF888888" 
+                                                   HorizontalAlignment="Center" 
+                                                   Margin="0,0,0,16"/>
+                                        <ProgressBar IsIndeterminate="True" 
+                                                    Width="200" 
+                                                    Height="4"/>
+                                    </StackPanel>
+                                    
                                     <!-- Chat Messages -->
                                     <ItemsControl ItemsSource="{Binding Messages}" 
                                                   Margin="16"
                                                   Visibility="{Binding DataContext.HasActiveChat, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource BooleanToVisibilityConverter}}">
-                                    <ItemsControl.Resources>
-                                        <!-- Chat Message Template -->
-                                        <DataTemplate x:Key="ChatMessageTemplate">
-                                            <views:ChatMessageControl 
-                                                Role="{Binding Role}"
-                                                Content="{Binding Content}"
-                                                Timestamp="{Binding Timestamp}"
-                                                Margin="0,8"/>
-                                        </DataTemplate>
+                                        <ItemsControl.Style>
+                                            <Style TargetType="ItemsControl">
+                                                <Setter Property="Visibility" Value="{Binding DataContext.HasActiveChat, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding DataContext.CurrentChatViewModel.IsLoading, RelativeSource={RelativeSource AncestorType=Window}}" Value="True">
+                                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </ItemsControl.Style>
+                                        <ItemsControl.Resources>
+                                            <!-- Chat Message Template -->
+                                            <DataTemplate x:Key="ChatMessageTemplate">
+                                                <Border Background="#FFFAFAFA" 
+                                                        BorderBrush="#FFE0E0E0" 
+                                                        BorderThickness="1"
+                                                        CornerRadius="8" 
+                                                        Padding="16,12"
+                                                        Margin="0,8">
+                                                    <Grid>
+                                                        <Grid.RowDefinitions>
+                                                            <RowDefinition Height="Auto"/>
+                                                            <RowDefinition Height="Auto"/>
+                                                            <RowDefinition Height="Auto"/>
+                                                        </Grid.RowDefinitions>
+                                                        
+                                                        <!-- Role -->
+                                                        <TextBlock Grid.Row="0" 
+                                                                   Text="{Binding DisplayName}"
+                                                                   FontWeight="Bold" 
+                                                                   FontSize="14"
+                                                                   Foreground="#FF1A1A1A"
+                                                                   Margin="0,0,0,8"/>
+                                                        
+                                                        <!-- Content - RichTextBox for formatting + text selection -->
+                                                        <RichTextBox Grid.Row="1" 
+                                                                     behaviors:MarkdownBehavior.MarkdownText="{Binding Content}"
+                                                                     IsReadOnly="True"
+                                                                     BorderThickness="0"
+                                                                     Background="Transparent"
+                                                                     FontSize="14"
+                                                                     Padding="0"
+                                                                     Margin="0,0,0,4"
+                                                                     Cursor="IBeam">
+                                                            <RichTextBox.Resources>
+                                                                <Style TargetType="Paragraph">
+                                                                    <Setter Property="Margin" Value="0"/>
+                                                                </Style>
+                                                            </RichTextBox.Resources>
+                                                        </RichTextBox>
+                                                        
+                                                        <!-- Timestamp -->
+                                                        <TextBlock Grid.Row="2" 
+                                                                   Text="{Binding Timestamp, StringFormat='{}{0:HH:mm}'}"
+                                                                   FontSize="10"
+                                                                   Foreground="#FF888888"
+                                                                   HorizontalAlignment="Right"
+                                                                   Margin="0,4,0,0"/>
+                                                    </Grid>
+                                                </Border>
+                                            </DataTemplate>
+                                            
+                                            <!-- Date Separator Template -->
+                                            <DataTemplate x:Key="DateSeparatorTemplate">
+                                                <Border Background="#FFE0E0E0" 
+                                                        CornerRadius="12" 
+                                                        Padding="16,8" 
+                                                        HorizontalAlignment="Center" 
+                                                        Margin="0,16">
+                                                    <TextBlock Text="{Binding DisplayText}" 
+                                                               FontSize="12" 
+                                                               FontWeight="Bold" 
+                                                               Foreground="#FF666666"/>
+                                                </Border>
+                                            </DataTemplate>
+                                        </ItemsControl.Resources>
                                         
-                                        <!-- Date Separator Template -->
-                                        <DataTemplate x:Key="DateSeparatorTemplate">
-                                            <Border Background="#FFE0E0E0" 
-                                                    CornerRadius="12" 
-                                                    Padding="16,8" 
-                                                    HorizontalAlignment="Center" 
-                                                    Margin="0,16">
-                                                <TextBlock Text="{Binding DisplayText}" 
-                                                           FontSize="12" 
-                                                           FontWeight="Bold" 
-                                                           Foreground="#FF666666"/>
-                                            </Border>
-                                        </DataTemplate>
-                                    </ItemsControl.Resources>
-                                    
-                                    <ItemsControl.ItemTemplateSelector>
-                                        <views:MessageTemplateSelector 
-                                            ChatMessageTemplate="{StaticResource ChatMessageTemplate}"
-                                            DateSeparatorTemplate="{StaticResource DateSeparatorTemplate}"/>
-                                    </ItemsControl.ItemTemplateSelector>
+                                        <ItemsControl.ItemTemplateSelector>
+                                            <views:MessageTemplateSelector 
+                                                ChatMessageTemplate="{StaticResource ChatMessageTemplate}"
+                                                DateSeparatorTemplate="{StaticResource DateSeparatorTemplate}"/>
+                                        </ItemsControl.ItemTemplateSelector>
                                     </ItemsControl>
                                     
                                     <!-- No Chat Message -->
                                     <StackPanel HorizontalAlignment="Center" 
                                                 VerticalAlignment="Center" 
                                                 Visibility="{Binding DataContext.HasActiveChat, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource InverseBooleanToVisibilityConverter}}">
-                                        <TextBlock Text="Lege deinen ersten Chat an" 
+                                        <TextBlock Text="Create your first chat" 
                                                    FontSize="18" 
                                                    FontWeight="SemiBold" 
                                                    Foreground="#FF888888" 
                                                    HorizontalAlignment="Center" 
                                                    Margin="0,0,0,8"/>
-                                        <TextBlock Text="Klicke auf 'Neuer Chat' um zu beginnen" 
+                                        <TextBlock Text="Click 'New Chat' to get started" 
                                                    FontSize="14" 
                                                    Foreground="#FFAAAAAA" 
                                                    HorizontalAlignment="Center"/>
@@ -257,7 +366,7 @@
                                     </TextBox>
 
                                     <StackPanel Grid.Row="1" Orientation="Vertical" HorizontalAlignment="Right">
-                                        <Button Content="Senden" 
+                                        <Button Content="Send" 
                                                 Command="{Binding SendMessageCommand}"
                                                 Style="{StaticResource ModernButton}"
                                                 Width="120"
@@ -268,7 +377,7 @@
                                                 <Binding Path="DataContext.IsInputEnabled" RelativeSource="{RelativeSource AncestorType=Window}"/>
                                             </Button.IsEnabled>
                                         </Button>
-                                        <TextBlock Text="Strg + Enter" 
+                                        <TextBlock Text="Ctrl + Enter" 
                                                    FontSize="10" 
                                                    Foreground="#FF888888"
                                                    HorizontalAlignment="Center"/>

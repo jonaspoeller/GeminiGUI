@@ -14,6 +14,7 @@ namespace GeminiGUI.ViewModels
         private readonly IChatService _chatService;
         private readonly IDatabaseService _databaseService;
         private readonly IConfigurationService _configService;
+        private readonly ILoggerService _logger;
 
         [ObservableProperty]
         private ObservableCollection<Chat> _chats = new();
@@ -28,7 +29,7 @@ namespace GeminiGUI.ViewModels
         private bool _isSettingsOpen;
 
         [ObservableProperty]
-        private string _statusMessage = "Bereit";
+        private string _statusMessage = "Ready";
 
         [ObservableProperty]
         private SettingsViewModel? _settingsViewModel;
@@ -37,7 +38,7 @@ namespace GeminiGUI.ViewModels
         private bool _isInputEnabled;
 
         [ObservableProperty]
-        private string _apiKeyStatus = "Kein API-Schlüssel";
+        private string _apiKeyStatus = "No API key";
 
         [ObservableProperty]
         private bool _hasActiveChat;
@@ -52,13 +53,14 @@ namespace GeminiGUI.ViewModels
         [ObservableProperty]
         private string _selectedModel = "2.5 Pro";
 
-        public MainWindowViewModel(IChatService chatService, IDatabaseService databaseService, IConfigurationService configService, SettingsViewModel settingsViewModel)
+        public MainWindowViewModel(IChatService chatService, IDatabaseService databaseService, IConfigurationService configService, SettingsViewModel settingsViewModel, ILoggerService logger)
         {
             _chatService = chatService;
             _databaseService = databaseService;
             _configService = configService;
             _settingsViewModel = settingsViewModel;
-            _isInputEnabled = false; // Standardmäßig deaktiviert
+            _logger = logger;
+            _isInputEnabled = false; // Disabled by default
             _ = LoadChatsAsync(); // Fire and forget
             UpdateInputEnabled(); // Initial state
             _ = UpdateApiKeyStatusAsync(); // Check API key status
@@ -75,11 +77,11 @@ namespace GeminiGUI.ViewModels
             try
             {
                 var hasApiKey = await _configService.HasApiKeyAsync();
-                ApiKeyStatus = hasApiKey ? "API-Schlüssel geladen" : "Kein API-Schlüssel";
+                ApiKeyStatus = hasApiKey ? "API key loaded" : "No API key";
             }
             catch
             {
-                ApiKeyStatus = "Kein API-Schlüssel";
+                ApiKeyStatus = "No API key";
             }
         }
 
@@ -88,17 +90,17 @@ namespace GeminiGUI.ViewModels
         {
             try
             {
-                StatusMessage = "Erstelle neuen Chat...";
-                var newChat = await _chatService.CreateNewChatAsync("Neuer Chat");
+                StatusMessage = "Creating new chat...";
+                var newChat = await _chatService.CreateNewChatAsync("New Chat");
                 Chats.Insert(0, newChat);
                 SelectedChat = newChat;
                 UpdateInputEnabled();
                 HasActiveChat = true; // Explicitly set HasActiveChat to true
-                StatusMessage = "Neuer Chat erstellt";
+                StatusMessage = "New chat created";
             }
             catch (Exception ex)
             {
-                StatusMessage = $"Fehler: {ex.Message}";
+                StatusMessage = $"Error: {ex.Message}";
             }
         }
 
@@ -109,7 +111,7 @@ namespace GeminiGUI.ViewModels
 
             try
             {
-                StatusMessage = "Lösche Chat...";
+                StatusMessage = "Deleting chat...";
                 await _chatService.DeleteChatAsync(chat.Id);
                 Chats.Remove(chat);
                 
@@ -119,11 +121,11 @@ namespace GeminiGUI.ViewModels
                     UpdateInputEnabled();
                 }
                 
-                StatusMessage = "Chat gelöscht";
+                StatusMessage = "Chat deleted";
             }
             catch (Exception ex)
             {
-                StatusMessage = $"Fehler beim Löschen: {ex.Message}";
+                StatusMessage = $"Error deleting chat: {ex.Message}";
             }
         }
 
@@ -153,19 +155,20 @@ namespace GeminiGUI.ViewModels
 
         partial void OnSelectedChatChanged(Chat? value)
         {
-            if (value != null)
+            // Dispose old ChatViewModel to prevent memory leaks
+            if (CurrentChatViewModel != null)
             {
-                CurrentChatViewModel = new ChatViewModel(_chatService, _databaseService, value);
-                CurrentChatViewModel.LoadingStateChanged += OnLoadingStateChanged;
-            }
-            else
-            {
-                if (CurrentChatViewModel != null)
-                {
-                    CurrentChatViewModel.LoadingStateChanged -= OnLoadingStateChanged;
-                }
+                CurrentChatViewModel.LoadingStateChanged -= OnLoadingStateChanged;
+                CurrentChatViewModel.Dispose();
                 CurrentChatViewModel = null;
             }
+            
+            if (value != null)
+            {
+                CurrentChatViewModel = new ChatViewModel(_chatService, _databaseService, value, _logger);
+                CurrentChatViewModel.LoadingStateChanged += OnLoadingStateChanged;
+            }
+            
             UpdateInputEnabled();
             HasActiveChat = value != null; // Explicitly update HasActiveChat
         }
@@ -179,7 +182,7 @@ namespace GeminiGUI.ViewModels
         {
             try
             {
-                StatusMessage = "Lade Chats...";
+                StatusMessage = "Loading chats...";
                 var chats = await _chatService.GetAllChatsAsync();
                 Chats.Clear();
                 foreach (var chat in chats)
@@ -192,12 +195,12 @@ namespace GeminiGUI.ViewModels
                     SelectedChat = Chats.First();
                 }
                 
-                StatusMessage = $"{Chats.Count} Chats geladen";
+                StatusMessage = $"{Chats.Count} chats loaded";
                 UpdateInputEnabled(); // Update input state after loading chats
             }
             catch (Exception ex)
             {
-                StatusMessage = $"Fehler beim Laden: {ex.Message}";
+                StatusMessage = $"Error loading chats: {ex.Message}";
             }
         }
 

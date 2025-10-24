@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Threading.Tasks;
 using System.Windows;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -39,7 +40,10 @@ namespace GeminiGUI
                 .ConfigureServices((context, services) =>
                 {
                     // Services
-                    services.AddHttpClient();
+                    services.AddHttpClient("Gemini", client =>
+                    {
+                        client.Timeout = TimeSpan.FromSeconds(30); // Set timeout to 30 seconds
+                    });
                     services.AddSingleton<ILoggerService, LoggerService>();
                     services.AddSingleton<IDatabaseService, DatabaseService>();
                     services.AddSingleton<IGeminiService, GeminiService>();
@@ -63,26 +67,38 @@ namespace GeminiGUI
             ExceptionHandler.Initialize(logger);
             logger.LogInfo("Gemini GUI starting up");
 
-            // Datenbank initialisieren
-            var databaseService = _host.Services.GetRequiredService<IDatabaseService>();
-            await databaseService.InitializeAsync();
-
-            // API-Schlüssel laden
-            var configService = _host.Services.GetRequiredService<IConfigurationService>();
-            var geminiService = _host.Services.GetRequiredService<IGeminiService>();
-            var apiKey = await configService.GetApiKeyAsync();
-            if (!string.IsNullOrEmpty(apiKey))
+            // Datenbank initialisieren BEVOR UI angezeigt wird
+            try
             {
-                geminiService.SetApiKey(apiKey);
-                logger.LogInfo("API key loaded from configuration");
+                var databaseService = _host.Services.GetRequiredService<IDatabaseService>();
+                await databaseService.InitializeAsync();
+                logger.LogInfo("Database initialized");
+
+                // Pre-generate AES key to avoid blocking on first message
+                await databaseService.PrepareEncryptionAsync();
+                logger.LogInfo("Encryption prepared");
+
+                // API-Schlüssel laden
+                var configService = _host.Services.GetRequiredService<IConfigurationService>();
+                var geminiService = _host.Services.GetRequiredService<IGeminiService>();
+                var apiKey = await configService.GetApiKeyAsync();
+                if (!string.IsNullOrEmpty(apiKey))
+                {
+                    geminiService.SetApiKey(apiKey);
+                    logger.LogInfo("API key loaded from configuration");
+                }
+                else
+                {
+                    logger.LogWarning("No API key found in configuration");
+                }
+
+                logger.LogInfo("Gemini GUI startup completed successfully");
             }
-            else
+            catch (Exception ex)
             {
-                logger.LogWarning("No API key found in configuration");
+                logger.LogError($"Error during startup: {ex.Message}", ex);
             }
 
-            logger.LogInfo("Gemini GUI startup completed successfully");
-            
             // MainWindow über DI erstellen und anzeigen
             var mainWindow = _host.Services.GetRequiredService<MainWindow>();
             mainWindow.Show();

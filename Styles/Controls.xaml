@@ -401,21 +401,31 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="ContextMenu">
-                    <Border x:Name="MainBorder"
-                            Background="{StaticResource SurfaceBrush}"
-                            BorderBrush="{StaticResource BorderBrush}"
-                            BorderThickness="1"
-                            CornerRadius="8"
-                            Padding="8">
-                        <Border.Effect>
-                            <DropShadowEffect Color="Black" 
-                                            Direction="270" 
-                                            ShadowDepth="8" 
-                                            BlurRadius="16" 
-                                            Opacity="0.15"/>
-                        </Border.Effect>
-                        <ItemsPresenter/>
-                    </Border>
+                    <Grid Margin="16">
+                        <!-- Shadow layer (background) -->
+                        <Border Background="{StaticResource SurfaceBrush}"
+                                BorderBrush="{StaticResource BorderBrush}"
+                                BorderThickness="1"
+                                CornerRadius="8">
+                            <Border.Effect>
+                                <DropShadowEffect Color="#FF000000" 
+                                                Direction="270" 
+                                                ShadowDepth="2" 
+                                                BlurRadius="12" 
+                                                Opacity="0.25"
+                                                RenderingBias="Quality"/>
+                            </Border.Effect>
+                        </Border>
+                        <!-- Content layer (foreground) - no effect -->
+                        <Border x:Name="MainBorder"
+                                Background="{StaticResource SurfaceBrush}"
+                                BorderBrush="{StaticResource BorderBrush}"
+                                BorderThickness="1"
+                                CornerRadius="8"
+                                Padding="4">
+                            <ItemsPresenter Margin="4"/>
+                        </Border>
+                    </Grid>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>

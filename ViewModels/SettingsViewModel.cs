@@ -22,7 +22,7 @@ namespace GeminiGUI.ViewModels
         private bool _isTestingConnection;
 
         [ObservableProperty]
-        private string _connectionStatus = "Nicht getestet";
+        private string _connectionStatus = "Not tested";
 
         [ObservableProperty]
         private bool _hasApiKey;
@@ -43,7 +43,7 @@ namespace GeminiGUI.ViewModels
             _configService = configService;
             _geminiService = geminiService;
             _loggerService = loggerService;
-            LoadApiKeyAsync();
+            _ = LoadApiKeyAsync(); // Fire-and-forget is intentional here
         }
 
         [RelayCommand]
@@ -57,11 +57,11 @@ namespace GeminiGUI.ViewModels
                 await _configService.SetApiKeyAsync(ApiKey);
                 _geminiService.SetApiKey(ApiKey);
                 HasApiKey = true;
-                ConnectionStatus = "API-Schlüssel gespeichert";
+                ConnectionStatus = "API key saved";
             }
             catch (Exception ex)
             {
-                ConnectionStatus = $"Fehler beim Speichern: {ex.Message}";
+                ConnectionStatus = $"Error saving: {ex.Message}";
             }
         }
 
@@ -70,12 +70,12 @@ namespace GeminiGUI.ViewModels
         {
             if (string.IsNullOrWhiteSpace(ApiKey))
             {
-                ConnectionStatus = "Kein API-Schlüssel eingegeben";
+                ConnectionStatus = "No API key entered";
                 return;
             }
 
             IsTestingConnection = true;
-            ConnectionStatus = "Teste Verbindung...";
+            ConnectionStatus = "Testing connection...";
 
             try
             {
@@ -84,18 +84,18 @@ namespace GeminiGUI.ViewModels
                 
                 if (isConnected)
                 {
-                    ConnectionStatus = "Verbindung erfolgreich";
+                    ConnectionStatus = "Connection successful";
                     await _configService.SetApiKeyAsync(ApiKey);
                     HasApiKey = true;
                 }
                 else
                 {
-                    ConnectionStatus = "Verbindung fehlgeschlagen";
+                    ConnectionStatus = "Connection failed";
                 }
             }
             catch (Exception ex)
             {
-                ConnectionStatus = $"Fehler: {ex.Message}";
+                ConnectionStatus = $"Error: {ex.Message}";
             }
             finally
             {
@@ -118,12 +118,12 @@ namespace GeminiGUI.ViewModels
                 _geminiService.SetApiKey(string.Empty); // API-Key auch aus GeminiService entfernen
                 ApiKey = string.Empty;
                 HasApiKey = false;
-                ConnectionStatus = "API-Schlüssel gelöscht";
+                ConnectionStatus = "API key deleted";
                 _loggerService.LogUserAction("API key cleared");
             }
             catch (Exception ex)
             {
-                ConnectionStatus = $"Fehler beim Löschen: {ex.Message}";
+                ConnectionStatus = $"Error deleting: {ex.Message}";
                 _loggerService.LogError("Failed to clear API key", ex);
             }
         }
@@ -204,13 +204,13 @@ namespace GeminiGUI.ViewModels
                 {
                     ApiKey = existingApiKey!;
                     IsApiKeySet = true;
-                    ConnectionStatus = "API-Schlüssel geladen";
+                    ConnectionStatus = "API key loaded";
                 }
                 else
                 {
                     ApiKey = string.Empty;
                     IsApiKeySet = false;
-                    ConnectionStatus = "Kein API-Schlüssel";
+                    ConnectionStatus = "No API key";
                 }
             }
             catch (Exception ex)
@@ -218,7 +218,7 @@ namespace GeminiGUI.ViewModels
                 HasApiKey = false;
                 ApiKey = string.Empty;
                 IsApiKeySet = false;
-                ConnectionStatus = $"Fehler beim Laden: {ex.Message}";
+                ConnectionStatus = $"Error loading: {ex.Message}";
             }
         }
 
